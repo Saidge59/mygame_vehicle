@@ -1,0 +1,154 @@
+<!DOCTYPE HML>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        
+        <title>Vehicle</title>
+        
+        <script src="vector2D.js"></script>
+        
+        <style>
+        canvas {
+            display:  block;
+            position: absolute;
+            margin:   auto;
+            top:      0;
+            bottom:   0;
+            left:     0;
+            right:    0;
+            }
+        </style>
+        
+    </head>
+    
+    <body>
+        
+    <script>
+    
+        var 
+        canvas,
+        ctx,
+        target,
+        pl,
+        pl2,
+        pl3, 
+			
+        mouseX,
+        mouseY;       
+        
+        function main () {
+            canvas = document.createElement("canvas");
+            canvas.style.border = "1px solid #000";
+            canvas.width  = 800;
+            canvas.height = 1280;
+            ctx = canvas.getContext("2d");
+            
+            ctx.beginPath();
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.stroke();
+            
+            document.body.appendChild(canvas);
+            document.addEventListener("mousemove", overHandler);
+            
+			target = new Vector2D(Vector2D.getRandom(canvas.width/5,  canvas.width - canvas.width/5), Vector2D.getRandom(canvas.height/5,  canvas.height - canvas.height/5));
+			
+            pl = new Player(10, 3, 40, "blue", new Vector2D(Vector2D.getRandom(0, target.x), Vector2D.getRandom(0, target.y)), new Vector2D(0, 0), new Vector2D(0, 0));
+            pl.vel.length = 2;
+            pl.vel.angleDeg = 180;
+            
+            pl2 = new Player(8, 4, 55, "red", new Vector2D(Vector2D.getRandom(0, target.x), Vector2D.getRandom(0, target.y)), new Vector2D(0, 0), new Vector2D(0, 0));
+            pl2.vel.length = 1;
+            pl2.vel.angleDeg = 0;
+			
+			pl3 = new Player(6, 5, 70, "green", new Vector2D(Vector2D.getRandom(0, target.x), Vector2D.getRandom(0, target.y)), new Vector2D(0, 0), new Vector2D(0, 0));
+            pl3.vel.length = 3;
+            pl3.vel.angleDeg = 120;
+            
+            run();
+        };     
+                
+        function overHandler (e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            //console.log(mouseX, mouseY);
+        };
+        
+        function run() {
+            var loop = function() {
+                update();
+                render();
+                window.requestAnimationFrame(loop, canvas);
+            }
+            window.requestAnimationFrame(loop, canvas);
+        };
+        
+        function update () {
+            if(pl.pos.dist(target) <= 10) {
+                target = new Vector2D(Vector2D.getRandom(canvas.width/5,  canvas.width - canvas.width/5), Vector2D.getRandom(canvas.height/5, canvas.height - canvas.height/5));
+            }
+//			if(pl2.pos.dist(target) <= 2) {
+//                target = new Vector2D(Vector2D.getRandom(canvas.width/5,  canvas.width - canvas.width/5), Vector2D.getRandom(canvas.height/5, canvas.height - canvas.height/5));
+//            }
+            
+            pl.seek(target);
+            pl.update();
+            
+            pl2.seek(pl.pos);
+            pl2.update();
+			
+			pl3.seek(pl2.pos);
+            pl3.update();
+        };
+        
+        function render () {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            pl.draw(pl);
+            pl2.draw(pl2);
+			pl3.draw(pl3);
+        };
+        
+        function Player (maxSpeed, mass, radius, color, pos, vel, sForce) {
+            this.maxSpeed = maxSpeed;
+            this.mass = mass;
+            this.radius = radius;
+            this.color = color;
+            this.pos = pos;
+            this.vel = vel;
+            this.sForce = sForce;
+            this.maxForce = 1;
+        };
+        
+        Player.prototype.update = function () {
+            this.sForce.truncate(this.maxForce);
+            this.sForce = this.sForce.clone().div(this.mass);
+            this.vel = this.vel.clone().add(this.sForce);
+            this.sForce.clear();
+            this.vel.truncate(this.maxSpeed);
+            this.pos = this.pos.clone().add(this.vel);
+        };
+        
+        Player.prototype.seek = function (target) {
+            var desiredVel = target.clone().subtract(this.pos);
+            desiredVel.normalize();
+            desiredVel.mul(this.maxSpeed);
+            var force = desiredVel.subtract(this.vel);
+            this.sForce.add(force);
+        };
+        
+        Player.prototype.draw = function (player) {
+            ctx.beginPath();
+			ctx.strokeStyle = player.color;
+            ctx.arc(player.pos.x, player.pos.y, player.radius, 0, 2 * Math.PI);
+            ctx.moveTo(player.pos.x, player.pos.y);
+            ctx.lineTo(player.pos.x + (player.vel.projX() * player.radius), player.pos.y + (player.vel.projY() * player.radius));
+            ctx.stroke();
+        };
+        
+        main();
+    </script>
+        
+    </body>
+</html>
